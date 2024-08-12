@@ -1,4 +1,3 @@
-from simplepasswordmanager import *
+import simplepasswordmanager.dbmodule as db
 
-
-Manager = Manager()
+print("Testing dbmodule", db.get_user_data({'username': '7alle9', 'password': '123456'}))

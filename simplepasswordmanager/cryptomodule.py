@@ -7,7 +7,7 @@ from base64 import urlsafe_b64encode, urlsafe_b64decode
 import os
 import string
 import secrets
-
+from logmodule import log
 
 def derive_key(salt, password):
     kdf = PBKDF2HMAC(
@@ -54,7 +54,14 @@ def decrypt_string(password, encrypted_text):
     return text.decode()
 
 
-def decrypt_data(password, data):
+def decrypt_list(password, data_list):
+    return [
+        decrypt_string(password, value)
+        for value in data_list
+    ]
+
+
+def decrypt_dict(password, data):
     return {
         key: decrypt_string(password, value)
         for key, value in data.items()

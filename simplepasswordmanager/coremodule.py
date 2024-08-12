@@ -1,89 +1,59 @@
-from cryptomodule import *
-from filemodule import *
-import os
+import datetime
 
+import cryptomodule as crypto
+import filemodule as files
+import dbmodule as db
+from configmodule import appConfig
+import os
+from logmodule import Logger
+
+
+def time_now():
+    return datetime.datetime.now().timestamp()
+
+
+logger = Logger(appConfig['logFile'], 'Manager')
 
 class Manager:
-    filePath = "C:\\Users\\amirm\\PycharmProjects\\password-manager\\passwords.json"
-    # toDelete password=haha
-    testKey = 'TEST'
-    expected = 'haha'
-
     def __init__(self):
-        log('----Initializing Manager----')
-        log('Reading encrypted data')
-        self.encryptedData = read_data(Manager.filePath)
-        self.decryptedData = {}
         self.isAuth = False
+        self.username = None
         self.masterPassword = None
 
-    def authenticate(self, password):
-        try:
-            log('Authenticating')
-            test = self.encryptedData[Manager.testKey]
-            testee = decrypt_string(password, test)
-            if testee == Manager.expected:
-                log('Successfull Authentication')
-                self.isAuth = True
-                self.masterPassword = password
-                log('Decrypting data')
-                self.decryptedData = decrypt_data(self.masterPassword, self.encryptedData)
-                return True
-            log('Failed Authentication')
-        except Exception as e:
-            log('Failed Authentication')
-            print(e)
-            return False
+    def __auth(self, username, password):
+        credentials = {'username': username, 'password': password}
+        is_success, message = db.login(credentials)
 
-    def check_password(self, password):
-        log('Checking password')
-        if self.isAuth:
-            return self.masterPassword == password
-        return False
+        if not is_success:
+            raise Exception(message)
 
-    def get_password(self, key):
-        key = key.upper()
-        log(f"Getting password for '{key}'")
-        if self.isAuth and self.decryptedData.keys().__contains__(key):
-            return self.decryptedData[key]
-        return None
+        self.username = username
+        self.masterPassword = password
+        self.isAuth = True
 
-    def modify_password(self, key, password):
-        log(f"Making encryted backup in '{os.getcwd()}'")
-        make_backup(self.encryptedData)
-        self.decryptedData[key] = password
-        self.encryptedData[key] = encrypt_string(self.masterPassword, password)
-        log('Writing new encryted data')
-        write_data(Manager.filePath, self.encryptedData)
+    def __fetch_data_package(self):
+        if not self.isAuth:
+            raise Exception('Not authenticated')
 
-    def add_password(self, key, password):
-        key = key.upper()
-        if self.isAuth and not self.decryptedData.keys().__contains__(key):
-            log(f"Adding password for '{key}'")
-            self.modify_password(key, password)
-            return True
-        return False
+        credentials = {'username': self.username, 'password': self.masterPassword}
+        is_success, result = db.get_user_data(credentials)
 
-    def update_password(self, key, password):
-        key = key.upper()
-        if self.isAuth and self.decryptedData.keys().__contains__(key):
-            log(f"Updating password for '{key}'")
-            self.modify_password(key, password)
-            return True
-        return False
+        if not is_success:
+            raise Exception(result)
 
-    def change_master_password(self, new_password):
-        log('Changing Master Password')
-        log(f"Making encrypted backup in '{os.getcwd()}'")
-        make_backup(self.encryptedData)
-        log('Encrypting data with new password')
-        self.encryptedData = encrypt_data(new_password, self.decryptedData)
-        log('Writing new encrypted data')
-        write_data(Manager.filePath, self.encryptedData)
-        self.masterPassword = new_password
-        log('Master Password Updated')
+        return result
 
-    @staticmethod
-    def generate_password():
-        log('Generating password')
-        return generate_strong_password()
+    def login(self, username, password):
+        self.__auth(username, password)
+
+        data_package = self.__fetch_data_package()
+        self.encryptedKeys = data_package['keys']
+        self.encryptedPasswords = data_package['values']
+        self.decryptedKeys = crypto.decrypt_list(self.masterPassword, self.encryptedKeys)
+        self.decryptedPasswords = crypto.decrypt_dict(self.masterPassword, self.encryptedPasswords)
+
+
+
+manager = Manager()
+manager.execute_build_sequence('7alle9', '123456')
+print(manager.add_password('facebook', '123'))

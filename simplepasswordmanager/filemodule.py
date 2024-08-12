@@ -15,10 +15,8 @@ def write_data(file_path, data):
         json.dump(data, file, indent=2)
 
 
-def make_backup(data, directory='backups'):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-        log(f"Backup Directory {directory} created")
-
+def make_backup(data, directory):
     now = int(datetime.datetime.now().timestamp())
-    write_data(f"{directory}/backup{now}.json", data)
+    os.makedirs(directory, exist_ok=True)
+    backup_file = os.path.join(directory, f"backup{now}.json")
+    write_data(backup_file, data)
