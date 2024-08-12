@@ -1,4 +1,3 @@
-from logmodule import log
 import datetime
 import json
 import os

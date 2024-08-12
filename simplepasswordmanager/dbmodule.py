@@ -17,4 +17,9 @@ def login(credentials):
     is_success = response.json()['status'] == 'success'
     return is_success, response.json()['message']
 
-print("Testing dbmodule", login({'username': '7alle9', 'password': '123456'}))
+
+def add_new_password(credentials, key, password):
+    body = {'credentials': credentials, 'key': key, 'password': password}
+    response = requests.post(settings.ADD_URL, json=body)
+    is_success = response.json()['status'] == 'success'
+    return is_success, response.json()['message']

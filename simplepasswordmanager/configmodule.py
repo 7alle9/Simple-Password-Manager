@@ -13,19 +13,21 @@ if os.path.exists(configFilePath):
     config.read(configFilePath)
 else:
     config['UserData'] = {
-        'backupsDir': os.path.join(user_data_dir("spm"), "backups"),
+        'backupDir': os.path.join(user_data_dir("spm"), "backups"),
         'offlineFile': os.path.join(user_data_dir("spm"), "offline.json")
     }
     config['App'] = {
-        'logFile': os.path.join(user_log_dir("spm"), ".log"),
+        'logDir': user_log_dir("spm"),
         'isOnline': True
     }
     with open(configFilePath, "w") as configFile:
         config.write(configFile)
 
 appConfig = {
-    'backupsDir': config['UserData']['backupsDir'],
+    'backupDir': config['UserData']['backupDir'],
     'offlineFile': config['UserData']['offlineFile'],
-    'logFile': config['App']['logFile'],
+    'logDir': config['App']['logDir'],
     'isOnline': config['App'].getboolean('isOnline')
 }
+
+# print(appConfig)

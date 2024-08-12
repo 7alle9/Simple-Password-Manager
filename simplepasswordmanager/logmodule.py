@@ -1,4 +1,5 @@
 import datetime
+import os
 
 
 def get_now():
@@ -6,12 +7,12 @@ def get_now():
 
 
 class Logger:
-    def __init__(self, log_file, log_source):
-        self.log_file = log_file
-        self.log_source = log_source
+    def __init__(self, log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+        self.logFile = os.path.join(log_dir, 'logs.txt')
 
     def log(self, text, is_error=False):
         state = 'error' if is_error else 'info'
-        log_text = f"[{get_now()}][{self.log_source}][{state}]: {text}\n"
-        open(self.log_file, 'a').write(log_text)
-
+        log_text = f"[{get_now()}][{state}]: {text}\n"
+        open(self.logFile, 'a').write(log_text)
+        print(log_text)

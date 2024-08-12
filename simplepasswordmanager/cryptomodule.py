@@ -7,7 +7,7 @@ from base64 import urlsafe_b64encode, urlsafe_b64decode
 import os
 import string
 import secrets
-from logmodule import log
+
 
 def derive_key(salt, password):
     kdf = PBKDF2HMAC(
@@ -87,3 +87,7 @@ def generate_strong_password():
         password = ''.join(secrets.choice(alphabet) for _ in range(length))
 
     return password
+
+
+# print('GMAIL:', encrypt_string('123456', 'GMAIL'))
+# print('password:', encrypt_string('123456', '123'))
