@@ -1,14 +1,13 @@
 import datetime
-
+import os
 import cryptomodule as crypto
 import dbmodule as db
 from configmodule import appConfig
 from logmodule import Logger
+from filemodule import FileManager
 
-
-def time_now():
-    return datetime.datetime.now().timestamp()
-
+def now_str():
+    return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')
 
 logger = Logger(appConfig['logDir'])
 
@@ -249,9 +248,205 @@ class OfflineManager:
         self.isAuth = False
         self.username = None
         self.masterPassword = None
+        self.userData = None
+        self.fileManager = FileManager(appConfig['backupDir'], appConfig['offlineDir'])
+
+    def __auth(self, username, password):
+        logger.log(f"-Authenticating user {username}-")
+
+        logger.log('Checking with local data')
+        hashed_username = crypto.hash_password(username)
+        self.user_data = self.fileManager.read_data(hashed_username)
+
+        hashed_password = crypto.hash_password(password)
+        if hashed_password == self.user_data['password']:
+            logger.log(f"-User {username} authenticated-")
+            self.username = username
+            self.masterPassword = password
+            self.isAuth = True
+            return
+
+        logger.log(f"Failed to authenticate user {username}", is_error=True)
+        raise Exception('Authentication failed')
+
+    def __update_data_package(self):
+        logger.log('-Updating data package-')
+
+        hashed_username = crypto.hash_password(self.username)
+        hashed_password = crypto.hash_password(self.masterPassword)
+
+        logger.log(f"Making backup for user {self.username}")
+        self.fileManager.make_backup(hashed_username)
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        logger.log('Updating local data')
+        self.user_data['keys'] = self.keys
+        self.user_data['values'] = self.encryptedPasswords
+        self.user_data['lastUpdate'] = self.updateHistory
+        self.user_data['password'] = hashed_password
+        self.fileManager.write_data(hashed_username, self.user_data)
+
+        logger.log('-Data package updated-')
+
+    def login(self, username, password):
+        logger.log('-Logging in-')
+
+        self.__auth(username, password)
+
+        logger.log('Unpacking and decrypting data')
+        self.keys = self.user_data['keys']
+        self.encryptedPasswords = self.user_data['values']
+        self.decryptedPasswords = crypto.decrypt_dict(self.masterPassword, self.encryptedPasswords)
+        self.updateHistory = self.user_data['lastUpdate']
+
+        logger.log('-Login successful and manager ready-')
+
+    def signup(self, username, password):
+        logger.log('-Signing up-')
+
+        logger.log('Checking with local data')
+        hashed_username = crypto.hash_password(username)
+        if self.fileManager.user_file_exists(hashed_username):
+            logger.log(f"User {username} already exists", is_error=True)
+            raise Exception('User already exists')
+
+        logger.log('Creating new user data')
+        hashed_password = crypto.hash_password(password)
+        self.user_data = {
+            'keys': [],
+            'values': {},
+            'password': hashed_password,
+            'lastUpdate': {}
+        }
+        self.fileManager.write_data(hashed_username, self.user_data)
+
+        logger.log('-Signup successful-')
+        self.login(username, password)
+
+    def get_keys(self):
+        logger.log('-Getting keys-')
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        logger.log('-Keys retrieved-')
+        return self.keys
+
+    def get_password(self, key):
+        key = key.upper()
+        logger.log(f"-Getting password for key '{key}'-")
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        if key not in self.keys:
+            logger.log(f"Key '{key}' not found", is_error=True)
+            raise Exception('Key not found')
+
+        logger.log(f"-Password for key '{key}' retrieved-")
+        return self.decryptedPasswords[key]
+
+    def add_password(self, key, password, auto_generate=False, length=16):
+        key = key.upper()
+        logger.log(f"-Adding password for key '{key}'-")
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        if key in self.keys:
+            logger.log(f"Key '{key}' already exists", is_error=True)
+            raise Exception('Key already exists')
+
+        logger.log('Generating strong password')
+        if auto_generate:
+            password = crypto.generate_strong_password(length)
+
+        logger.log('Adding key and password to data')
+        encrypted_password = crypto.encrypt_string(self.masterPassword, password)
+        self.keys.append(key)
+        self.decryptedPasswords[key] = password
+        self.encryptedPasswords[key] = encrypted_password
+        self.updateHistory[key] = now_str()
+
+        self.__update_data_package()
+
+        logger.log(f"-Password for key '{key}' added-")
+
+    def update_password(self, key, password, auto_generate=False, length=16):
+        key = key.upper()
+        logger.log(f"-update password for key '{key}'-")
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        if key not in self.keys:
+            logger.log(f"Key '{key}' not found", is_error=True)
+            raise Exception('Key not found')
+
+        logger.log('Generating strong password')
+        if auto_generate:
+            password = crypto.generate_strong_password(length)
+
+        logger.log('Editing key and password in data')
+        encrypted_password = crypto.encrypt_string(self.masterPassword, password)
+        self.decryptedPasswords[key] = password
+        self.encryptedPasswords[key] = encrypted_password
+        self.updateHistory[key] = now_str()
+
+        self.__update_data_package()
+
+        logger.log(f"-Password for key '{key}' updated-")
+
+    def delete_password(self, key):
+        key = key.upper()
+        logger.log(f"-Deleting password for key '{key}'-")
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        if key not in self.keys:
+            logger.log(f"-Key '{key}' not found-", is_error=True)
+            return
+
+        logger.log('Deleting key and password from data')
+        self.keys.remove(key)
+        del self.decryptedPasswords[key]
+        del self.encryptedPasswords[key]
+        del self.updateHistory[key]
+
+        self.__update_data_package()
+
+        logger.log(f"-Password for key '{key}' deleted-")
+
+    def change_master_password(self, new_password):
+        logger.log('-Changing master password-')
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        logger.log('Encrypting data with new password')
+        self.encryptedPasswords = crypto.encrypt_dict(new_password, self.decryptedPasswords)
+        self.masterPassword = new_password
+
+        logger.log('Updating data')
+        self.__update_data_package()
+
+        logger.log('-Master password changed-')
 
 
-test = OnlineManager()
-test.signup('Asma', '123')
+# test = OnlineManager()
+# test.login('Asma', '123')
 # test.change_master_password('123456')
 
+test = OfflineManager()
+test.login('Amir', '123456')
+print(test.get_password('gmail'))

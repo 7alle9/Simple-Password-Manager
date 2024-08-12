@@ -13,7 +13,7 @@ if os.path.exists(configFilePath):
 else:
     config['UserData'] = {
         'backupDir': os.path.join(user_data_dir("spm"), "backups"),
-        'offlineFile': os.path.join(user_data_dir("spm"), "offline.json")
+        'offlineDir': os.path.join(user_data_dir("spm"), "offline")
     }
     config['App'] = {
         'logDir': user_log_dir("spm"),
@@ -24,7 +24,7 @@ else:
 
 appConfig = {
     'backupDir': config['UserData']['backupDir'],
-    'offlineFile': config['UserData']['offlineFile'],
+    'offlineDir': config['UserData']['offlineDir'],
     'logDir': config['App']['logDir'],
     'isOnline': config['App'].getboolean('isOnline')
 }
