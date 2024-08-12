@@ -8,7 +8,6 @@ configDir = user_config_dir("spm")
 os.makedirs(configDir, exist_ok=True)
 configFilePath = os.path.join(configDir, "config.ini")
 
-print(configFilePath)
 if os.path.exists(configFilePath):
     config.read(configFilePath)
 else:

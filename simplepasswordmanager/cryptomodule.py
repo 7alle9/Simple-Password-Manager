@@ -7,6 +7,7 @@ from base64 import urlsafe_b64encode, urlsafe_b64decode
 import os
 import string
 import secrets
+import hashlib
 
 
 def derive_key(salt, password):
@@ -54,11 +55,10 @@ def decrypt_string(password, encrypted_text):
     return text.decode()
 
 
-def decrypt_list(password, data_list):
-    return [
-        decrypt_string(password, value)
-        for value in data_list
-    ]
+def hash_password(password):
+    password_bytes = password.encode('utf-8')
+    sha256_hash = hashlib.sha256(password_bytes).hexdigest()
+    return sha256_hash
 
 
 def decrypt_dict(password, data):
@@ -75,8 +75,7 @@ def encrypt_dict(password, data):
     }
 
 
-def generate_strong_password():
-    length = 16
+def generate_strong_password(length):
     alphabet = string.ascii_letters + string.digits + string.punctuation
     password = ''.join(secrets.choice(alphabet) for _ in range(length))
 
@@ -91,3 +90,6 @@ def generate_strong_password():
 
 # print('GMAIL:', encrypt_string('123456', 'GMAIL'))
 # print('password:', encrypt_string('123456', '123'))
+# a = hash_password('123456')
+# print(a)
+

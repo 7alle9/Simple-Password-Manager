@@ -1,10 +1,8 @@
 import datetime
 
 import cryptomodule as crypto
-import filemodule as files
 import dbmodule as db
 from configmodule import appConfig
-import os
 from logmodule import Logger
 
 
@@ -25,7 +23,10 @@ class Manager:
         logger.log(f"-Authenticating user {username}-")
 
         logger.log('Checking with server')
-        credentials = {'username': username, 'password': password}
+        credentials = {
+            'username': username,
+            'password': crypto.hash_password(password)
+        }
         is_success, message = db.login(credentials)
 
         if not is_success:
@@ -45,8 +46,7 @@ class Manager:
             raise Exception('Not authenticated')
 
         logger.log('Fetching data from server')
-        credentials = {'username': self.username, 'password': self.masterPassword}
-        is_success, result = db.get_user_data(credentials)
+        is_success, result = db.get_user_data(self.__get_credentials())
 
         if not is_success:
             logger.log(f"Failed to fetch data package: {result}", is_error=True)
@@ -54,6 +54,18 @@ class Manager:
 
         logger.log('-Data package fetched-')
         return result
+
+    def __get_credentials(self):
+        logger.log('-Getting credentials-')
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        return {
+            'username': self.username,
+            'password': crypto.hash_password(self.masterPassword)
+        }
 
     def refresh_data(self):
         logger.log('-Refreshing data-')
@@ -105,7 +117,7 @@ class Manager:
         logger.log(f"-Password for key '{key}' retrieved-")
         return self.decryptedPasswords[key]
 
-    def add_password(self, key, password):
+    def add_password(self, key, password, auto_generate=False, length=16):
         key = key.upper()
         logger.log(f"-Adding password for key '{key}'-")
 
@@ -117,6 +129,10 @@ class Manager:
             logger.log(f"Key '{key}' already exists", is_error=True)
             raise Exception('Key already exists')
 
+        logger.log('Generating strong password')
+        if auto_generate:
+            password = crypto.generate_strong_password(length)
+
         logger.log('Adding key and password to data')
         encrypted_password = crypto.encrypt_string(self.masterPassword, password)
         self.keys.append(key)
@@ -124,8 +140,7 @@ class Manager:
         self.encryptedPasswords[key] = encrypted_password
 
         logger.log('Updating data package on server')
-        credentials = {'username': self.username, 'password': self.masterPassword}
-        is_success, message = db.add_new_password(credentials, key, encrypted_password)
+        is_success, message = db.add_new_password(self.__get_credentials(), key, encrypted_password)
 
         if not is_success:
             logger.log(f"Failed to add password: {message}", is_error=True)
@@ -133,7 +148,7 @@ class Manager:
 
         logger.log(f"-Password for key '{key}' added-")
 
-    def update_password(self, key, password):
+    def update_password(self, key, password, auto_generate=False, length=16):
         key = key.upper()
         logger.log(f"-update password for key '{key}'-")
 
@@ -145,14 +160,17 @@ class Manager:
             logger.log(f"Key '{key}' not found", is_error=True)
             raise Exception('Key not found')
 
+        logger.log('Generating strong password')
+        if auto_generate:
+            password = crypto.generate_strong_password(length)
+
         logger.log('Editing key and password in data')
         encrypted_password = crypto.encrypt_string(self.masterPassword, password)
         self.decryptedPasswords[key] = password
         self.encryptedPasswords[key] = encrypted_password
 
         logger.log('Updating data package on server')
-        credentials = {'username': self.username, 'password': self.masterPassword}
-        is_success, message = db.update_password(credentials, key, encrypted_password)
+        is_success, message = db.update_password(self.__get_credentials(), key, encrypted_password)
 
         if not is_success:
             logger.log(f"Failed to edit password: {message}", is_error=True)
@@ -178,8 +196,7 @@ class Manager:
         del self.encryptedPasswords[key]
 
         logger.log('Updating data package on server')
-        credentials = {'username': self.username, 'password': self.masterPassword}
-        is_success, message = db.delete_password(credentials, key)
+        is_success, message = db.delete_password(self.__get_credentials(), key)
 
         if not is_success:
             logger.log(f"Failed to delete password: {message}", is_error=True)
@@ -200,8 +217,7 @@ class Manager:
         new_encrypted_passwords = crypto.encrypt_dict(new_password, self.decryptedPasswords)
 
         logger.log('Updating data package on server')
-        credentials = {'username': self.username, 'password': self.masterPassword}
-        is_success, message = db.change_master_password(credentials, new_password, new_encrypted_passwords)
+        is_success, message = db.change_master_password(self.__get_credentials(), new_password, new_encrypted_passwords)
 
         if not is_success:
             logger.log(f"Failed to change master password: {message}", is_error=True)
@@ -210,3 +226,8 @@ class Manager:
         self.masterPassword = new_password
         logger.log('-Master password changed-')
 
+
+test = Manager()
+test.login('Amir','123456')
+# test.change_master_password('123456')
+print(test.get_password('facebook'))
