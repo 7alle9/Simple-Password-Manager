@@ -1,4 +1,5 @@
 LOGIN_URL = 'https://eu-west-2.aws.data.mongodb-api.com/app/application-0-zqohoov/endpoint/login'
+SIGNUP_URL = 'https://eu-west-2.aws.data.mongodb-api.com/app/application-0-zqohoov/endpoint/signup'
 FETCH_URL = 'https://eu-west-2.aws.data.mongodb-api.com/app/application-0-zqohoov/endpoint/fetchData'
 ADD_URL = 'https://eu-west-2.aws.data.mongodb-api.com/app/application-0-zqohoov/endpoint/add'
 UPDATE_URL = 'https://eu-west-2.aws.data.mongodb-api.com/app/application-0-zqohoov/endpoint/update'

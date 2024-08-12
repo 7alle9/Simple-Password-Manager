@@ -13,7 +13,7 @@ def time_now():
 logger = Logger(appConfig['logDir'])
 
 
-class Manager:
+class OnlineManager:
     def __init__(self):
         self.isAuth = False
         self.username = None
@@ -91,6 +91,23 @@ class Manager:
         self.refresh_data()
 
         logger.log('-Login successful and manager ready-')
+
+    def signup(self, username, password):
+        logger.log('-Signing up-')
+
+        logger.log('Checking with server')
+        credentials = {
+            'username': username,
+            'password': crypto.hash_password(password)
+        }
+        is_success, message = db.signup(credentials)
+
+        if not is_success:
+            logger.log(f"Failed to signup user {username}: {message}", is_error=True)
+            raise Exception(message)
+
+        logger.log('-Signup successful-')
+        self.login(username, password)
 
     def get_keys(self):
         logger.log('-Getting keys-')
@@ -227,7 +244,14 @@ class Manager:
         logger.log('-Master password changed-')
 
 
-test = Manager()
-test.login('Amir','123456')
+class OfflineManager:
+    def __init__(self):
+        self.isAuth = False
+        self.username = None
+        self.masterPassword = None
+
+
+test = OnlineManager()
+test.signup('Asma', '123')
 # test.change_master_password('123456')
-print(test.get_password('facebook'))
+

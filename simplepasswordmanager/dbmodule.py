@@ -18,6 +18,13 @@ def login(credentials):
     return is_success, response.json()['message']
 
 
+def signup(credentials):
+    body = {'credentials': credentials}
+    response = requests.post(settings.SIGNUP_URL, json=body)
+    is_success = response.json()['status'] == 'success'
+    return is_success, response.json()['message']
+
+
 def add_new_password(credentials, key, password):
     body = {'credentials': credentials, 'key': key, 'password': password}
     response = requests.post(settings.ADD_URL, json=body)
