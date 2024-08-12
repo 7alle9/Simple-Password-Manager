@@ -55,20 +55,40 @@ class Manager:
         logger.log('-Data package fetched-')
         return result
 
+    def refresh_data(self):
+        logger.log('-Refreshing data-')
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        data_package = self.__fetch_data_package()
+
+        logger.log('Unpacking and Decrypting data package')
+        self.keys = data_package['keys']
+        self.encryptedPasswords = data_package['values']
+        self.decryptedPasswords = crypto.decrypt_dict(self.masterPassword, self.encryptedPasswords)
+
+        logger.log('-Data refreshed-')
+
     def login(self, username, password):
         logger.log('-Logging in-')
 
         self.__auth(username, password)
 
-        data_package = self.__fetch_data_package()
-
-        logger.log('Unpacking and Decrypting data package')
-        self.encryptedKeys = data_package['keys']
-        self.encryptedPasswords = data_package['values']
-        self.decryptedKeys = crypto.decrypt_list(self.masterPassword, self.encryptedKeys)
-        self.decryptedPasswords = crypto.decrypt_dict(self.masterPassword, self.encryptedPasswords)
+        self.refresh_data()
 
         logger.log('-Login successful and manager ready-')
+
+    def get_keys(self):
+        logger.log('-Getting keys-')
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        logger.log('-Keys retrieved-')
+        return self.keys
 
     def get_password(self, key):
         key = key.upper()
@@ -78,7 +98,7 @@ class Manager:
             logger.log('Not authenticated user', is_error=True)
             raise Exception('Not authenticated')
 
-        if key not in self.decryptedKeys:
+        if key not in self.keys:
             logger.log(f"Key '{key}' not found", is_error=True)
             raise Exception('Key not found')
 
@@ -93,21 +113,19 @@ class Manager:
             logger.log('Not authenticated user', is_error=True)
             raise Exception('Not authenticated')
 
-        if key in self.decryptedKeys:
+        if key in self.keys:
             logger.log(f"Key '{key}' already exists", is_error=True)
             raise Exception('Key already exists')
 
         logger.log('Adding key and password to data')
-        self.decryptedKeys.append(key)
-        self.decryptedPasswords[key] = password
-        encrypted_key = crypto.encrypt_string(self.masterPassword, key)
         encrypted_password = crypto.encrypt_string(self.masterPassword, password)
-        self.encryptedKeys.append(encrypted_key)
+        self.keys.append(key)
+        self.decryptedPasswords[key] = password
         self.encryptedPasswords[key] = encrypted_password
 
         logger.log('Updating data package on server')
         credentials = {'username': self.username, 'password': self.masterPassword}
-        is_success, message = db.add_new_password(credentials, encrypted_key, encrypted_password)
+        is_success, message = db.add_new_password(credentials, key, encrypted_password)
 
         if not is_success:
             logger.log(f"Failed to add password: {message}", is_error=True)
@@ -115,6 +133,80 @@ class Manager:
 
         logger.log(f"-Password for key '{key}' added-")
 
+    def update_password(self, key, password):
+        key = key.upper()
+        logger.log(f"-update password for key '{key}'-")
 
-test = Manager()
-test.login('Amir', '123456')
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        if key not in self.keys:
+            logger.log(f"Key '{key}' not found", is_error=True)
+            raise Exception('Key not found')
+
+        logger.log('Editing key and password in data')
+        encrypted_password = crypto.encrypt_string(self.masterPassword, password)
+        self.decryptedPasswords[key] = password
+        self.encryptedPasswords[key] = encrypted_password
+
+        logger.log('Updating data package on server')
+        credentials = {'username': self.username, 'password': self.masterPassword}
+        is_success, message = db.update_password(credentials, key, encrypted_password)
+
+        if not is_success:
+            logger.log(f"Failed to edit password: {message}", is_error=True)
+            raise Exception(message)
+
+        logger.log(f"-Password for key '{key}' updated-")
+
+    def delete_password(self, key):
+        key = key.upper()
+        logger.log(f"-Deleting password for key '{key}'-")
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        if key not in self.keys:
+            logger.log(f"-Key '{key}' not found-", is_error=True)
+            return
+
+        logger.log('Deleting key and password from data')
+        self.keys.remove(key)
+        del self.decryptedPasswords[key]
+        del self.encryptedPasswords[key]
+
+        logger.log('Updating data package on server')
+        credentials = {'username': self.username, 'password': self.masterPassword}
+        is_success, message = db.delete_password(credentials, key)
+
+        if not is_success:
+            logger.log(f"Failed to delete password: {message}", is_error=True)
+            raise Exception(message)
+
+        logger.log(f"-Password for key '{key}' deleted-")
+
+    def change_master_password(self, new_password):
+        logger.log('-Changing master password-')
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        self.refresh_data()
+
+        logger.log('Encrypting data with new password')
+        new_encrypted_passwords = crypto.encrypt_dict(new_password, self.decryptedPasswords)
+
+        logger.log('Updating data package on server')
+        credentials = {'username': self.username, 'password': self.masterPassword}
+        is_success, message = db.change_master_password(credentials, new_password, new_encrypted_passwords)
+
+        if not is_success:
+            logger.log(f"Failed to change master password: {message}", is_error=True)
+            raise Exception(message)
+
+        self.masterPassword = new_password
+        logger.log('-Master password changed-')
+

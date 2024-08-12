@@ -68,7 +68,7 @@ def decrypt_dict(password, data):
     }
 
 
-def encrypt_data(password, data):
+def encrypt_dict(password, data):
     return {
         key: encrypt_string(password, value)
         for key, value in data.items()
