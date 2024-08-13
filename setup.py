@@ -1,6 +1,14 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1'
+import os
+
+
+def read_file(filename):
+    with open(os.path.join(os.path.dirname(__file__), filename), encoding='utf-8') as f:
+        return f.read()
+
+
+VERSION = read_file('README.md')
 DESCRIPTION = 'A simple password manager'
 LONG_DESCRIPTION = 'A manager that stores your passwords securely and allows you to manage them'
 
