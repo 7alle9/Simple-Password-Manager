@@ -25,7 +25,7 @@ addParser = subparsers.add_parser(
     usage='spm add <key> [-a] [-l LENGTH]'
 )
 addParser.add_argument('key', help='The key for the password')
-addParser.add_argument('-a', '--auto-genrate', action='store_true', help='Auto genrate a new password')
+addParser.add_argument('-a', '--auto-generate', action='store_true', help='Auto generate a new password')
 addParser.add_argument(
     '-l', '--length',
     type=int,
@@ -37,7 +37,7 @@ addParser.add_argument(
 updateParser = subparsers.add_parser(
     'update',
     help='Update a password',
-    description='Update a password of an exisiting key',
+    description='Update a password of an existing key',
     usage='''\n   spm update <key> <password>\nor spm update <key> -a [-l LENGTH]'''
 )
 updateParser.add_argument('key', help='The key for the password')
@@ -224,24 +224,31 @@ def signup():
 username = get_username()
 managerMode = get_mode()
 manager: Manager = OfflineManager() if managerMode == 'offline' else OnlineManager()
-match args.command:
-    case 'mode':
-        mode()
-    case 'user':
-        user()
-    case 'get':
-        get()
-    case 'add':
-        add()
-    case 'update':
-        update()
-    case 'delete':
-        delete()
-    case 'keys':
-        keys()
-    case 'change':
-        change()
-    case 'sign':
-        signup()
-    case _:
-        raise parser.error('Invalid command. Use "spm -h" for help')
+
+
+def main():
+    match args.command:
+        case 'mode':
+            mode()
+        case 'user':
+            user()
+        case 'get':
+            get()
+        case 'add':
+            add()
+        case 'update':
+            update()
+        case 'delete':
+            delete()
+        case 'keys':
+            keys()
+        case 'change':
+            change()
+        case 'sign':
+            signup()
+        case _:
+            raise parser.error('Invalid command. Use "spm -h" for help')
+
+
+if __name__ == "__main__":
+    main()
