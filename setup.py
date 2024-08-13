@@ -17,7 +17,8 @@ setup(
     install_requires=[
         'cryptography',
         'requests',
-        'platformdirs'
+        'platformdirs',
+        'pyperclip'
     ],
     entry_points={
         'console_scripts': [

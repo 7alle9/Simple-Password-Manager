@@ -13,7 +13,33 @@ def now_str():
 logger = Logger(appConfig['logDir'])
 
 
-class OnlineManager:
+class Manager:
+    def login(self, username, password):
+        pass
+
+    def signup(self, username, password):
+        pass
+
+    def get_keys(self):
+        pass
+
+    def get_password(self, key):
+        pass
+
+    def add_password(self, key, password, auto_generate=False, length=16):
+        pass
+
+    def update_password(self, key, password, auto_generate=False, length=16):
+        pass
+
+    def delete_password(self, key):
+        pass
+
+    def change_master_password(self, new_password):
+        pass
+
+
+class OnlineManager(Manager):
     def __init__(self):
         self.isAuth = False
         self.username = None
@@ -31,7 +57,7 @@ class OnlineManager:
 
         if not is_success:
             logger.log(f"Failed to authenticate user {username}: {message}", is_error=True)
-            raise Exception(message)
+            raise BadCredentialsException(message)
 
         logger.log(f"-User {username} authenticated-")
         self.username = username
@@ -129,7 +155,7 @@ class OnlineManager:
 
         if key not in self.keys:
             logger.log(f"Key '{key}' not found", is_error=True)
-            raise Exception('Key not found')
+            raise KeyNotFoundException('Key not found')
 
         logger.log(f"-Password for key '{key}' retrieved-")
         return self.decryptedPasswords[key]
@@ -144,7 +170,7 @@ class OnlineManager:
 
         if key in self.keys:
             logger.log(f"Key '{key}' already exists", is_error=True)
-            raise Exception('Key already exists')
+            raise KeyAlreadyExistsException('Key already exists')
 
         logger.log('Generating strong password')
         if auto_generate:
@@ -175,7 +201,7 @@ class OnlineManager:
 
         if key not in self.keys:
             logger.log(f"Key '{key}' not found", is_error=True)
-            raise Exception('Key not found')
+            raise KeyNotFoundException('Key not found')
 
         logger.log('Generating strong password')
         if auto_generate:
@@ -244,7 +270,7 @@ class OnlineManager:
         logger.log('-Master password changed-')
 
 
-class OfflineManager:
+class OfflineManager(Manager):
     def __init__(self):
         self.isAuth = False
         self.username = None
@@ -257,7 +283,11 @@ class OfflineManager:
 
         logger.log('Checking with local data')
         hashed_username = crypto.hash_password(username)
-        self.user_data = self.fileManager.read_data(hashed_username)
+        try:
+            self.user_data = self.fileManager.read_data(hashed_username)
+        except FileNotFoundError:
+            logger.log(f"User {username} does not exist", is_error=True)
+            raise BadCredentialsException('User does not exist')
 
         hashed_password = crypto.hash_password(password)
         if hashed_password == self.user_data['password']:
@@ -347,7 +377,7 @@ class OfflineManager:
 
         if key not in self.keys:
             logger.log(f"Key '{key}' not found", is_error=True)
-            raise Exception('Key not found')
+            raise KeyNotFoundException('Key not found')
 
         logger.log(f"-Password for key '{key}' retrieved-")
         return self.decryptedPasswords[key]
@@ -362,7 +392,7 @@ class OfflineManager:
 
         if key in self.keys:
             logger.log(f"Key '{key}' already exists", is_error=True)
-            raise Exception('Key already exists')
+            raise KeyAlreadyExistsException('Key already exists')
 
         logger.log('Generating strong password')
         if auto_generate:
@@ -389,7 +419,7 @@ class OfflineManager:
 
         if key not in self.keys:
             logger.log(f"Key '{key}' not found", is_error=True)
-            raise Exception('Key not found')
+            raise KeyNotFoundException('Key not found')
 
         logger.log('Generating strong password')
         if auto_generate:
@@ -444,10 +474,16 @@ class OfflineManager:
         logger.log('-Master password changed-')
 
 
-# test = OnlineManager()
-# test.login('Asma', '123')
-# test.change_master_password('123456')
+class KeyNotFoundException(Exception):
+    def __init__(self, message):
+        self.message = message
 
-# test = OfflineManager()
-# test.login('Amir', '123456')
-# print(test.get_password('gmail'))
+
+class KeyAlreadyExistsException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+class BadCredentialsException(Exception):
+    def __init__(self, message):
+        self.message = message

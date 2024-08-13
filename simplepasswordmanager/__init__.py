@@ -1,4 +1,2 @@
-from .coremodule import OfflineManager, OnlineManager
+from .coremodule import *
 
-
-__all__ = ['OfflineManager', 'OnlineManager']
