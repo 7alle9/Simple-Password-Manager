@@ -1,1 +1,6 @@
 .idea
+build
+dist
+simplepasswordmanager.egg-info
+__pycache__
+simplepasswordmanager/__pycache__

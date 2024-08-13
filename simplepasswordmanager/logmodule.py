@@ -15,4 +15,4 @@ class Logger:
         state = 'error' if is_error else 'info'
         log_text = f"[{get_now()}][{state}]: {text}\n"
         open(self.logFile, 'a').write(log_text)
-        print(log_text)
+        # print(log_text)

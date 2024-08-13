@@ -1,5 +1,5 @@
 import requests
-import settings
+from . import settings
 
 
 def get_user_data(credentials):

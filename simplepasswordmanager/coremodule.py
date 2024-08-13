@@ -1,13 +1,14 @@
 import datetime
-import os
-import cryptomodule as crypto
-import dbmodule as db
-from configmodule import appConfig
-from logmodule import Logger
-from filemodule import FileManager
+from . import cryptomodule as crypto
+from . import dbmodule as db
+from .configmodule import appConfig
+from .logmodule import Logger
+from .filemodule import FileManager
+
 
 def now_str():
     return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')
+
 
 logger = Logger(appConfig['logDir'])
 
@@ -447,6 +448,6 @@ class OfflineManager:
 # test.login('Asma', '123')
 # test.change_master_password('123456')
 
-test = OfflineManager()
-test.login('Amir', '123456')
-print(test.get_password('gmail'))
+# test = OfflineManager()
+# test.login('Amir', '123456')
+# print(test.get_password('gmail'))
