@@ -22,10 +22,9 @@ addParser = subparsers.add_parser(
     'add',
     help='Add a new password',
     description='Add password for a new key',
-    usage='''\n   spm add <key> <password>\nor spm add <key> -a [-l LENGTH]'''
+    usage='spm add <key> [-a] [-l LENGTH]'
 )
 addParser.add_argument('key', help='The key for the password')
-addParser.add_argument('password', help='The password to store', nargs='?')
 addParser.add_argument('-a', '--auto-genrate', action='store_true', help='Auto genrate a new password')
 addParser.add_argument(
     '-l', '--length',
@@ -96,6 +95,15 @@ changeParser = subparsers.add_parser(
     usage='spm change'
 )
 
+# signup
+signupParser = subparsers.add_parser(
+    'sign',
+    help='Create a new account',
+    description='Create a new account with a unique username and a master password',
+    usage='spm sign <username>'
+)
+signupParser.add_argument('username', help='The username for the account')
+
 args = parser.parse_args()
 
 
@@ -105,8 +113,9 @@ def login():
     master_password = getpass.getpass('Enter Master Password: ')
     try:
         manager.login(username, master_password)
-    except Exception:
-        print('Invalid username or password or account not initialized')
+    except BadCredentialsException:
+        print('Invalid username or password')
+        print('Use "spm sign <username>" to create a new account')
         exit()
 
 
@@ -129,7 +138,9 @@ def user():
         if username:
             print(username)
         else:
-            print('Username not set. Use "spm user -s <username>" to set username')
+            print('Username not set.')
+            print('   use "spm user -s <username>" to set username')
+            print('or use "spm sign <username>" to create a new account')
 
 
 def get():
@@ -151,7 +162,8 @@ def add():
         if args.auto_genrate:
             manager.add_password(args.key, '', auto_generate=True, length=args.length)
         else:
-            manager.add_password(args.key, args.password)
+            new_password = getpass.getpass(f"Enter the password for '{args.key}': ")
+            manager.add_password(args.key, new_password)
         print(f"Password added")
     except KeyAlreadyExistsException:
         print(f"key '{args.key}' already exists \n Use 'spm update' to update the password")
@@ -178,6 +190,8 @@ def delete():
 def keys():
     login()
     print('Keys:')
+    if not manager.get_keys():
+        print('No keys stored')
     for key in manager.get_keys():
         print(key)
 
@@ -187,6 +201,24 @@ def change():
     new_password = getpass.getpass('Enter new Master Password: ')
     manager.change_master_password(new_password)
     print('Master Password changed')
+
+
+def signup():
+    master_password = getpass.getpass('Enter Master Password: ')
+    confirm_password = getpass.getpass('Confirm Master Password: ')
+    if master_password != confirm_password:
+        print('Passwords do not match')
+        exit()
+    try:
+        manager.signup(args.username, master_password)
+    except UserAlreadyExistsException:
+        print('Username already exists')
+        exit()
+
+    global username
+    username = args.username
+    set_username(username)
+    print('Account created')
 
 
 username = get_username()
@@ -209,5 +241,7 @@ match args.command:
         keys()
     case 'change':
         change()
+    case 'sign':
+        signup()
     case _:
         raise parser.error('Invalid command. Use "spm -h" for help')

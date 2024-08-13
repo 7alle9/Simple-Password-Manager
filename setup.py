@@ -4,9 +4,7 @@ VERSION = '0.0.1'
 DESCRIPTION = 'A simple password manager'
 LONG_DESCRIPTION = 'A manager that stores your passwords securely and allows you to manage them'
 
-# Setting up
 setup(
-    # the name must match the folder name 'verysimplemodule'
     name="simplepasswordmanager",
     version=VERSION,
     author="Amir Mallek",

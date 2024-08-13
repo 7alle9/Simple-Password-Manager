@@ -56,6 +56,9 @@ class OnlineManager(Manager):
         is_success, message = db.login(credentials)
 
         if not is_success:
+            if message == 'User does not exist':
+                logger.log(f"User {username} does not exist", is_error=True)
+                raise AccountNotFoundException(message)
             logger.log(f"Failed to authenticate user {username}: {message}", is_error=True)
             raise BadCredentialsException(message)
 
@@ -130,7 +133,7 @@ class OnlineManager(Manager):
 
         if not is_success:
             logger.log(f"Failed to signup user {username}: {message}", is_error=True)
-            raise Exception(message)
+            raise UserAlreadyExistsException(message)
 
         logger.log('-Signup successful-')
         self.login(username, password)
@@ -287,7 +290,7 @@ class OfflineManager(Manager):
             self.user_data = self.fileManager.read_data(hashed_username)
         except FileNotFoundError:
             logger.log(f"User {username} does not exist", is_error=True)
-            raise BadCredentialsException('User does not exist')
+            raise AccountNotFoundException('User does not exist')
 
         hashed_password = crypto.hash_password(password)
         if hashed_password == self.user_data['password']:
@@ -298,7 +301,7 @@ class OfflineManager(Manager):
             return
 
         logger.log(f"Failed to authenticate user {username}", is_error=True)
-        raise Exception('Authentication failed')
+        raise BadCredentialsException('Authentication failed')
 
     def __update_data_package(self):
         logger.log('-Updating data package-')
@@ -342,7 +345,7 @@ class OfflineManager(Manager):
         hashed_username = crypto.hash_password(username)
         if self.fileManager.user_file_exists(hashed_username):
             logger.log(f"User {username} already exists", is_error=True)
-            raise Exception('User already exists')
+            raise UserAlreadyExistsException('User already exists')
 
         logger.log('Creating new user data')
         hashed_password = crypto.hash_password(password)
@@ -485,5 +488,15 @@ class KeyAlreadyExistsException(Exception):
 
 
 class BadCredentialsException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+class AccountNotFoundException(BadCredentialsException):
+    def __init__(self, message):
+        self.message = message
+
+
+class UserAlreadyExistsException(Exception):
     def __init__(self, message):
         self.message = message
