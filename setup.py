@@ -5,10 +5,11 @@ DESCRIPTION = 'A simple password manager'
 LONG_DESCRIPTION = 'A manager that stores your passwords securely and allows you to manage them'
 
 setup(
-    name="simplepasswordmanager",
+    name="simple-passwor-dmanager",
     version=VERSION,
     author="Amir Mallek",
     author_email="mallekamir123@gmail.com",
+    url="https://github.com/7alle9/Simple-Password-Manager",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
