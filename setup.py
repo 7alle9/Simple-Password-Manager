@@ -8,9 +8,9 @@ def read_file(filename):
         return f.read()
 
 
-VERSION = read_file('README.md')
+VERSION = '0.0.2'
 DESCRIPTION = 'A simple password manager'
-LONG_DESCRIPTION = 'A manager that stores your passwords securely and allows you to manage them'
+LONG_DESCRIPTION = read_file('README.md')
 
 setup(
     name="simple-passwor-dmanager",
