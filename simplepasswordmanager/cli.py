@@ -29,7 +29,7 @@ addParser.add_argument('-a', '--auto-generate', action='store_true', help='Auto 
 addParser.add_argument(
     '-l', '--length',
     type=int,
-    help='The length of the password to genrate(Default is 16)',
+    help='The length of the password to generate(Default is 16)',
     default=16
 )
 
@@ -42,11 +42,11 @@ updateParser = subparsers.add_parser(
 )
 updateParser.add_argument('key', help='The key for the password')
 updateParser.add_argument('password', help='The new password', nargs='?')
-updateParser.add_argument('-a', '--auto-genrate', action='store_true', help='Auto genrate a new password')
+updateParser.add_argument('-a', '--auto-generate', action='store_true', help='Auto generate a new password')
 updateParser.add_argument(
     '-l', '--length',
     type=int,
-    help='The length of the password to genrate(Default is 16)',
+    help='The length of the password to generate(Default is 16)',
     default=16
 )
 
@@ -159,7 +159,7 @@ def get():
 def add():
     login()
     try:
-        if args.auto_genrate:
+        if args.auto_generate:
             manager.add_password(args.key, '', auto_generate=True, length=args.length)
         else:
             new_password = getpass.getpass(f"Enter the password for '{args.key}': ")
@@ -172,7 +172,7 @@ def add():
 def update():
     login()
     try:
-        if args.auto_genrate:
+        if args.auto_generate:
             manager.update_password(args.key, '', auto_generate=True, length=args.length)
         else:
             manager.update_password(args.key, args.password)
