@@ -29,6 +29,7 @@ Usage
 The Simple Password Manager can be used directly from the command line with the following commands:
 
 1. **Start in Online or Offline Mode:**
+
    - For online use, where your passwords are stored securely in the cloud:
 
      .. code-block:: bash
