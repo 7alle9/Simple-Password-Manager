@@ -1,14 +1,8 @@
 from setuptools import setup, find_packages
 
-
-def get_readme():
-    with open('README.rst', 'r') as f:
-        return f.read()
-
-
 VERSION = '0.0.3'
 DESCRIPTION = 'A simple password manager'
-LONG_DESCRIPTION = get_readme()
+LONG_DESCRIPTION = open('README.md').read()
 
 setup(
     name="simple-password-manager",
