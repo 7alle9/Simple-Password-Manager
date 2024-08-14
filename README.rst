@@ -53,25 +53,25 @@ The Simple Password Manager can be used directly from the command line with the 
    - After creating an account, you can begin managing your passwords with the following commands:
      - **Add a new password:**
 
-       .. code-block::
+       .. code-block:: bash
 
            spm add <service> <username>
 
      - **Retrieve a password:**
 
-       .. code-block::
+       .. code-block:: bash
 
            spm get <service>
 
      - **Update an existing password:**
 
-       .. code-block::
+       .. code-block:: bash
 
            spm update <service>
 
      - **Delete a password:**
 
-       .. code-block::
+       .. code-block:: bash
 
            spm delete <service>
 
@@ -81,7 +81,7 @@ The Simple Password Manager can be used directly from the command line with the 
 
 You can also use Simple Password Manager directly in your Python code:
 
-.. code-block::
+.. code-block:: python
 
     from simplepasswordmanager import Manager, OfflineManager
 
