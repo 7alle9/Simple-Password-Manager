@@ -23,6 +23,9 @@ class Manager:
     def get_keys(self):
         pass
 
+    def get_history(self):
+        pass
+
     def get_password(self, key):
         pass
 
@@ -108,6 +111,7 @@ class OnlineManager(Manager):
         logger.log('Unpacking and Decrypting data package')
         self.keys = data_package['keys']
         self.encryptedPasswords = data_package['values']
+        self.updateHistory = data_package['lastUpdate']
         self.decryptedPasswords = crypto.decrypt_dict(self.masterPassword, self.encryptedPasswords)
 
         logger.log('-Data refreshed-')
@@ -147,6 +151,16 @@ class OnlineManager(Manager):
 
         logger.log('-Keys retrieved-')
         return self.keys
+
+    def get_history(self):
+        logger.log('-Getting history-')
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        logger.log('-History retrieved-')
+        return self.updateHistory
 
     def get_password(self, key):
         key = key.upper()
@@ -290,7 +304,7 @@ class OfflineManager(Manager):
             self.user_data = self.fileManager.read_data(hashed_username)
         except FileNotFoundError:
             logger.log(f"User {username} does not exist", is_error=True)
-            raise AccountNotFoundException('User does not exist')
+            raise UserDoesNotExistException('User does not exist')
 
         hashed_password = crypto.hash_password(password)
         if hashed_password == self.user_data['password']:
@@ -369,6 +383,16 @@ class OfflineManager(Manager):
 
         logger.log('-Keys retrieved-')
         return self.keys
+
+    def get_history(self):
+        logger.log('-Getting history-')
+
+        if not self.isAuth:
+            logger.log('Not authenticated user', is_error=True)
+            raise Exception('Not authenticated')
+
+        logger.log('-History retrieved-')
+        return self.updateHistory
 
     def get_password(self, key):
         key = key.upper()
@@ -492,7 +516,7 @@ class BadCredentialsException(Exception):
         self.message = message
 
 
-class AccountNotFoundException(BadCredentialsException):
+class UserDoesNotExistException(BadCredentialsException):
     def __init__(self, message):
         self.message = message
 

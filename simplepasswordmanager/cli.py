@@ -86,21 +86,22 @@ getKeysParser = subparsers.add_parser(
     description='Get all keys managed by spm',
     usage='spm keys'
 )
+getKeysParser.add_argument('-l', '--long', action='store_true', help='Display keys and the last time they were updated')
 
 # change master password
-changeParser = subparsers.add_parser(
-    'change',
+masterParser = subparsers.add_parser(
+    'master',
     help='Change the master password',
     description='Change the master password',
-    usage='spm change'
+    usage='spm master'
 )
 
 # signup
 signupParser = subparsers.add_parser(
-    'sign',
+    'signup',
     help='Create a new account',
     description='Create a new account with a unique username and a master password',
-    usage='spm sign <username>'
+    usage='spm signup <username>'
 )
 signupParser.add_argument('username', help='The username for the account')
 
@@ -113,34 +114,38 @@ def login():
     master_password = getpass.getpass('Enter Master Password: ')
     try:
         manager.login(username, master_password)
+    except UserDoesNotExistException:
+        print('User does not exist')
+        print('Use "spm signup <username>" to create a new account', end='')
+        exit()
     except BadCredentialsException:
-        print('Invalid username or password')
-        print('Use "spm sign <username>" to create a new account')
+        print('   Check username or password maybe incorrect')
+        print('or use "spm sign <username>" to create a new account', end='')
         exit()
 
 
 def mode():
     if args.online:
         set_mode('online')
-        print('Mode set to online')
+        print('Mode set to online', end='')
     elif args.offline:
         set_mode('offline')
-        print('Mode set to offline')
+        print('Mode set to offline', end='')
     else:
-        print(f"Manager mode: {managerMode}")
+        print(f"Manager mode: {managerMode}", end='')
 
 
 def user():
     if args.set:
         set_username(args.set)
-        print(f"Username set to {args.set}")
+        print(f"Username set to {args.set}", end='')
     else:
         if username:
             print(username)
         else:
             print('Username not set.')
             print('   use "spm user -s <username>" to set username')
-            print('or use "spm sign <username>" to create a new account')
+            print('or use "spm sign <username>" to create a new account', end='')
 
 
 def get():
@@ -149,11 +154,11 @@ def get():
         password = manager.get_password(args.key)
         if args.copy:
             pyperclip.copy(password)
-            print(f'Password copied to clipboard')
+            print(f'Password copied to clipboard', end='')
         else:
             print(password)
     except KeyNotFoundException:
-        print(f"key '{args.key}' not found")
+        print(f"key '{args.key}' not found", end='')
 
 
 def add():
@@ -164,9 +169,10 @@ def add():
         else:
             new_password = getpass.getpass(f"Enter the password for '{args.key}': ")
             manager.add_password(args.key, new_password)
-        print(f"Password added")
+        print(f"Password added", end='')
     except KeyAlreadyExistsException:
-        print(f"key '{args.key}' already exists \n Use 'spm update' to update the password")
+        print(f"key '{args.key}' already exists")
+        print("Use 'spm update' to update the password", end='')
 
 
 def update():
@@ -176,49 +182,64 @@ def update():
             manager.update_password(args.key, '', auto_generate=True, length=args.length)
         else:
             manager.update_password(args.key, args.password)
-        print(f"Password updated")
+        print(f"Password updated", end='')
     except KeyNotFoundException:
-        print(f"key '{args.key}' not found")
+        print(f"key '{args.key}' not found", end='')
 
 
 def delete():
     login()
     manager.delete_password(args.key)
-    print(f"Password deleted")
+    print(f"Password deleted", end='')
 
 
 def keys():
     login()
-    print('Keys:')
     if not manager.get_keys():
-        print('No keys stored')
-    for key in manager.get_keys():
-        print(key)
+        print('No keys stored', end='')
+
+    keys_len = len(manager.get_keys())
+
+    if args.long:
+        history = manager.get_history()
+        for i in range(keys_len):
+            key = manager.get_keys()[i]
+            if i == keys_len - 1:
+                print(f'{key} - {history[key]}', end='')
+            else:
+                print(f'{key} - {history[key]}')
+    else:
+        for i in range(keys_len):
+            key = manager.get_keys()[i]
+            if i == keys_len - 1:
+                print(key, end='')
+            else:
+                print(key)
 
 
-def change():
+def master():
     login()
     new_password = getpass.getpass('Enter new Master Password: ')
     manager.change_master_password(new_password)
-    print('Master Password changed')
+    print('Master Password changed', end='')
 
 
 def signup():
     master_password = getpass.getpass('Enter Master Password: ')
     confirm_password = getpass.getpass('Confirm Master Password: ')
     if master_password != confirm_password:
-        print('Passwords do not match')
+        print('Passwords do not match', end='')
         exit()
     try:
         manager.signup(args.username, master_password)
     except UserAlreadyExistsException:
-        print('Username already exists')
+        print('Username already exists', end='')
         exit()
 
     global username
     username = args.username
     set_username(username)
-    print('Account created')
+    print('Account created', end='')
 
 
 username = get_username()
@@ -242,9 +263,9 @@ def main():
             delete()
         case 'keys':
             keys()
-        case 'change':
-            change()
-        case 'sign':
+        case 'master':
+            master()
+        case 'signup':
             signup()
         case _:
             raise parser.error('Invalid command. Use "spm -h" for help')
